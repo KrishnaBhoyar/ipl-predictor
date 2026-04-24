@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from PIL import Image
 import pickle
-import matplotlib.pyplot as plt
 
 # config
 st.set_page_config(page_title="IPL Predictor", page_icon="🏏", layout="wide")
@@ -44,16 +43,6 @@ def load_logo(team):
         return Image.open(path)
     return None
 
-# chart
-def show_chart(team1, team2, p1, p2):
-    fig, ax = plt.subplots()
-    ax.bar([team1, team2], [p1, p2])
-    ax.set_ylim(0, 100)
-
-    for i, v in enumerate([p1, p2]):
-        ax.text(i, v + 2, f"{v}%", ha='center')
-
-    st.pyplot(fig)
 
 # title
 st.title("🏏 IPL Match Win Predictor")
@@ -145,7 +134,6 @@ Confidence Level: {confidence}
                     st.image(logo2, width=120)
                 st.metric(team2, f"{p2}%")
 
-            show_chart(team1, team2, p1, p2)
 
             # insights
             st.markdown("### 📊 Match Insights")
