@@ -63,6 +63,11 @@ st.markdown("---")
 team1 = st.sidebar.selectbox("Team 1", teams)
 team2 = st.sidebar.selectbox("Team 2", teams)
 
+venue = st.sidebar.selectbox(
+    "Venue",
+    ["Mumbai", "Delhi", "Chennai", "Bangalore", "Hyderabad"]
+)
+
 if team1 == team2:
     st.error("Select different teams")
     st.stop()
@@ -91,48 +96,67 @@ st.markdown("## 🔮 Prediction")
 if st.button("Predict Winner"):
 
     try:
-        input_df = pd.DataFrame({
-            "home_team": [team1],
-            "away_team": [team2],
-            "toss_winner": [toss_winner],
-            "toss_decision": [toss_decision]
-        })
+        with st.spinner("Analyzing match..."):
 
-        # encode
-        input_encoded = pd.get_dummies(input_df)
+            # IMPORTANT: venue not used in model yet (safe)
+            input_df = pd.DataFrame({
+                "home_team": [team1],
+                "away_team": [team2],
+                "toss_winner": [toss_winner],
+                "toss_decision": [toss_decision]
+            })
 
-        # match model columns
-        model_columns = model.feature_names_in_
+            # encoding
+            input_encoded = pd.get_dummies(input_df)
 
-        for col in model_columns:
-            if col not in input_encoded.columns:
-                input_encoded[col] = 0
+            model_columns = model.feature_names_in_
 
-        input_encoded = input_encoded[model_columns]
+            for col in model_columns:
+                if col not in input_encoded.columns:
+                    input_encoded[col] = 0
 
-        # predict
-        prob = model.predict_proba(input_encoded)
+            input_encoded = input_encoded[model_columns]
 
-        p1 = int(prob[0][1] * 100)
-        p2 = 100 - p1
+            # prediction
+            prob = model.predict_proba(input_encoded)
 
-        winner = team1 if p1 > p2 else team2
+            p1 = int(prob[0][1] * 100)
+            p2 = 100 - p1
 
-        st.success(f"🏆 Predicted Winner: {winner}")
+            winner = team1 if p1 > p2 else team2
 
-        col3, col4 = st.columns(2)
+            # confidence
+            confidence = "High" if max(p1, p2) > 70 else "Medium" if max(p1, p2) > 55 else "Low"
 
-        with col3:
-            if logo1:
-                st.image(logo1, width=120)
-            st.metric(team1, f"{p1}%")
+            st.success(f"""
+🏆 {winner} has {max(p1,p2)}% chance of winning  
+Confidence Level: {confidence}
+""")
 
-        with col4:
-            if logo2:
-                st.image(logo2, width=120)
-            st.metric(team2, f"{p2}%")
+            col3, col4 = st.columns(2)
 
-        show_chart(team1, team2, p1, p2)
+            with col3:
+                if logo1:
+                    st.image(logo1, width=120)
+                st.metric(team1, f"{p1}%")
+
+            with col4:
+                if logo2:
+                    st.image(logo2, width=120)
+                st.metric(team2, f"{p2}%")
+
+            show_chart(team1, team2, p1, p2)
+
+            # insights
+            st.markdown("### 📊 Match Insights")
+
+            if toss_winner == winner:
+                st.write("✔ Toss advantage impacted the prediction")
+
+            if toss_decision == "Field":
+                st.write("✔ Chasing teams generally perform better")
+
+            st.write(f"📍 Match Venue: {venue}")
 
     except Exception as e:
         st.error(f"Prediction error: {e}")
